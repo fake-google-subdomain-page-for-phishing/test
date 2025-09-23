@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>https://accounts.google.com</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Google Fonts for styling -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      /* --- General Styling for Layout and Fonts --- */
+      html, body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 180vh;
+        font-family: "Google Sans", "Roboto", Arial, sans-serif;
+        background: #f8f8f8;
+        overflow-y: auto;
+        transition: overflow-y 0s 0.5s;
+      }
+      body.no-scroll {
+        overflow-y: hidden;
+      }
+
+      /* --- Top Fake Address Bar --- */
+      .fake-address-bar-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 50px;
+        background-color: white;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .fake-address-bar-container.active {
+        z-index: 9999;
+      }
+      .fake-address-bar-container img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: fill;
+        object-position: top center;
+        opacity: 1;
+        transition: opacity 300ms ease;
+      }
+
+      /* --- Bottom Fake Address Bar --- */
+      .fake-address-bar-bottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 50px;
+        background-color: white;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .fake-address-bar-bottom.active {
+        z-index: 9999;
+      }
+      .fake-address-bar-bottom img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: fill;
+        object-position: bottom center;
+        opacity: 1;
+        transition: opacity 300ms ease;
+      }
+
+      /* If you want a reflection effect for bottom, uncomment transform below */
+      /* .fake-address-bar-bottom img { transform: scaleY(-1); opacity: 0.95; } */
+
+      /* hide second images initially */
+      #addressImage2,
+      #addressImage2Bottom {
+        opacity: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      /* --- Content Styling --- */
+      .content-area-wrapper {
+        position: relative;
+        padding-top: 0;
+        width: 100%;
+        box-sizing: border-box;
+        padding-bottom: 80px; /* leave room for bottom fake bar */
+      }
+
+      .content {
+        position: relative;
+        z-index: 1;
+        max-width: 900px;
+        margin: 32px auto;
+        padding: 24px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      }
+
+      .content.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .news-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        flex-wrap: wrap;
+      }
+      .news-logo {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1565c0;
+        text-transform: uppercase;
+      }
+      .news-nav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      .news-nav a {
+        text-decoration: none;
+        color: #555;
+        font-weight: 500;
+        font-size: 15px;
+      }
+      .news-date {
+        font-size: 14px;
+        color: #777;
+        text-align: center;
+        margin-top: 8px;
+        margin-bottom: 20px;
+      }
+      .main-article h1 {
+        font-size: 26px;
+        color: #202124;
+        margin-bottom: 12px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .main-article .author-date {
+        font-size: 14px;
+        color: #777;
+        margin-bottom: 18px;
+      }
+      .main-article img {
+        width: 100%;
+        height: auto;
+        border-radius: 6px;
+        margin-bottom: 20px;
+      }
+      .main-article p {
+        line-height: 1.7;
+        margin-bottom: 16px;
+        color: #333;
+        font-size: 15px;
+        text-align: justify;
+      }
+      .related-articles {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+      }
+      .related-articles h2 {
+        font-size: 20px;
+        color: #202124;
+        margin-bottom: 12px;
+        font-weight: 500;
+      }
+      .related-articles ul {
+        list-style: none;
+        padding: 0;
+      }
+      .related-articles li {
+        margin-bottom: 12px;
+      }
+      .related-articles a {
+        text-decoration: none;
+        color: #1a73e8;
+        font-size: 15px;
+        font-weight: 500;
+      }
+
+      /* --- Loading Overlay & Login Simulation --- */
+      .loading-overlay,
+      .login-section {
+        opacity: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        padding-top: 56px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f8f8f8;
+        z-index: 2;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+      }
+      .loading-overlay {
+        text-align: center;
+        font-size: 22px;
+        color: #555;
+        flex-direction: column;
+      }
+      .loading-overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .login-section {
+        z-index: 3;
+      }
+      .login-section.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .login-form {
+        background-color: white;
+        padding: 36px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px rgba(60, 64, 67, 0.15);
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+        border: 1px solid #dadce0;
+        box-sizing: border-box;
+      }
+      .login-form .logo {
+        margin-bottom: 18px;
+      }
+      .login-form .logo img {
+        width: 80px;
+        height: auto;
+      }
+      .login-form h2 {
+        margin-bottom: 8px;
+        color: #202124;
+        font-size: 22px;
+        font-weight: 500;
+      }
+      .login-form p.subtitle {
+        color: #202124;
+        font-size: 15px;
+        margin-bottom: 18px;
+      }
+      .input-group {
+        margin-bottom: 16px;
+        text-align: left;
+      }
+      .input-group input[type="text"],
+      .input-group input[type="password"] {
+        width: 100%;
+        padding: 12px 12px;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        font-size: 15px;
+        color: #202124;
+        box-sizing: border-box;
+      }
+      .login-form button {
+        min-width: 96px;
+        padding: 10px 20px;
+        background-color: #1a73e8;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      /* small-screen tweaks */
+      @media (max-width: 480px) {
+        .content { margin: 12px; padding: 16px; }
+        .main-article h1 { font-size: 20px; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top fake address bar -->
+    <div class="fake-address-bar-container" id="fakeAddressBarTop">
+      <!-- image 1 (default) -->
+      <img src="blank.png" alt="Fake Address Bar Default Top" id="addressImage1Top" />
+      <!-- image 2 (active / spoof) -->
+      <img src="address.jpeg" alt="Fake Address Bar Active Top" id="addressImage2Top" />
+    </div>
+
+    <!-- Bottom fake address bar -->
+    <div class="fake-address-bar-bottom" id="fakeAddressBarBottom">
+      <!-- image 1 (default) -->
+      <img src="blank.png" alt="Fake Address Bar Default Bottom" id="addressImage1Bottom" />
+      <!-- image 2 (active / spoof) -->
+      <img src="address.jpeg" alt="Fake Address Bar Active Bottom" id="addressImage2Bottom" />
+    </div>
+
+    <!-- Main content -->
+    <div class="content-area-wrapper" id="contentAreaWrapper">
+      <div class="content" id="mainContent">
+        <div class="news-header">
+          <div class="news-logo">Bug Bounty Demo</div>
+          <nav class="news-nav" aria-label="Demo navigation">
+            <ul>
+              <li><a href="#">Reports</a></li>
+              <li><a href="#">Hall of Fame</a></li>
+              <li><a href="#">Programs</a></li>
+              <li><a href="#">Guides</a></li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="news-date">Friday, September 19, 2025 | 09:00 AM UTC</div>
+
+        <div class="main-article">
+          <h1>Address Bar Spoof Simulation via Scroll Behavior</h1>
+          <p class="author-date">By: Test Researcher | Published: September 17, 2025</p>
+          <img src="demo-image.jpg" alt="Demo Article Image" />
+          <p>This demonstration shows how scrolling down a webpage can hide the browser’s address bar. Attackers could exploit this to spoof the URL and trick users into believing they are interacting with a legitimate website.</p>
+          <p>The hidden address bar allows malicious interfaces to simulate the browser’s UI, potentially leading to phishing attacks or unauthorized data collection.</p>
+          <p>The issue was responsibly disclosed in this test environment to highlight risks associated with dynamic UI changes during scrolling interactions.</p>
+        </div>
+
+        <div class="related-articles">
+          <h2>Related Reports</h2>
+          <ul>
+            <li><a href="#">URL Spoof via CSS Overlay Techniques</a></li>
+            <li><a href="#">Session Hijacking through Hidden UI Elements</a></li>
+            <li><a href="#">Phishing via Scroll-Based UI Manipulation</a></li>
+          </ul>
+        </div>
+
+        <p style="text-align: center; margin-top: 28px; color: #777">
+          Scroll further to experience the login spoof simulation.
+        </p>
+      </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">Loading...</div>
+
+    <!-- Login spoof -->
+    <div class="login-section" id="loginFormSection" aria-hidden="true">
+      <form class="login-form" onsubmit="return false;">
+        <div class="logo">
+          <img src="https://via.placeholder.com/120x40?text=Logo" alt="Test Logo" />
+        </div>
+        <h2>Sign in</h2>
+        <p class="subtitle">Use your test account</p>
+        <div class="input-group">
+          <input type="text" id="username" name="username" placeholder="Email / Password" required />
+        </div>
+        <div style="margin-bottom:12px;">
+          <a href="#" class="link-forgot-password">Forgot account?</a>
+        </div>
+        <div class="actions">
+          <button type="submit">Next</button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      // Page transition & sync logic for both top and bottom fake bars
+      window.addEventListener("load", () => {
+        const fakeBarTop = document.getElementById("fakeAddressBarTop");
+        const fakeBarBottom = document.getElementById("fakeAddressBarBottom");
+
+        const addressImage1Top = document.getElementById("addressImage1Top");
+        const addressImage2Top = document.getElementById("addressImage2Top");
+        const addressImage1Bottom = document.getElementById("addressImage1Bottom");
+        const addressImage2Bottom = document.getElementById("addressImage2Bottom");
+
+        const mainContent = document.getElementById("mainContent");
+        const loadingOverlay = document.getElementById("loadingOverlay");
+        const loginFormSection = document.getElementById("loginFormSection");
+        const contentAreaWrapper = document.getElementById("contentAreaWrapper");
+        const body = document.body;
+
+        // Attempt to trigger the browser's hide-address-bar behavior
+        // (scroll a tiny bit then return to top)
+        try {
+          window.scrollTo({ top: 1, behavior: "smooth" });
+        } catch (e) {
+          window.scrollTo(1, 0);
+        }
+
+        // Sequence: after a short delay, lock page, show fake bars, swap images, show loading, then show login spoof.
+        setTimeout(() => {
+          try { window.scrollTo(0, 0); } catch (e) {}
+          body.classList.add("no-scroll");
+
+          // Activate both bars
+          if (fakeBarTop) fakeBarTop.classList.add("active");
+          if (fakeBarBottom) fakeBarBottom.classList.add("active");
+
+          // hide main content (visual transition)
+          if (mainContent) mainContent.classList.add("hidden");
+
+          // slight delay to allow initial rendering
+          setTimeout(() => {
+            // Swap to the "spoof" image on both top and bottom
+            if (addressImage1Top) addressImage1Top.style.opacity = "0";
+            if (addressImage2Top) addressImage2Top.style.opacity = "1";
+            if (addressImage1Bottom) addressImage1Bottom.style.opacity = "0";
+            if (addressImage2Bottom) addressImage2Bottom.style.opacity = "1";
+
+            // Show loading overlay
+            if (loadingOverlay) loadingOverlay.classList.add("visible");
+
+            // After loading, hide content wrapper and reveal the login spoof
+            setTimeout(() => {
+              if (loadingOverlay) {
+                loadingOverlay.classList.remove("visible");
+                loadingOverlay.style.opacity = "0";
+                loadingOverlay.style.pointerEvents = "none";
+              }
+
+              if (contentAreaWrapper) contentAreaWrapper.style.display = "none";
+              if (loginFormSection) {
+                loginFormSection.classList.add("visible");
+                loginFormSection.setAttribute("aria-hidden", "false");
+              }
+              // Ensure fake bars remain visible during spoof
+              if (fakeBarTop) fakeBarTop.classList.add("active");
+              if (fakeBarBottom) fakeBarBottom.classList.add("active");
+            }, 1500);
+          }, 21);
+        }, 4000);
+      });
+    </script>
+  </body>
+</html>
